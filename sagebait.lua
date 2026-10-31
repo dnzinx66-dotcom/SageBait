@@ -6357,3 +6357,83 @@ Library.ToggleKeybind = Options.MenuKeybind
 Library:SetConfigFolder("SAGEBAIT")
 Library:BuildConfigSection(Tabs["UI Settings"])
 Library:LoadAutoloadConfig()
+
+-- Botão Flutuante SAGEBAIT
+do
+    local WinShell = Library.Window.Instance
+    local WinRoot = Library.Root
+
+    for _, desc in ipairs(WinShell:GetDescendants()) do
+        if desc:IsA("TextButton") and desc.Text == "-" then
+            desc:Destroy()
+        end
+    end
+
+    task.spawn(function()
+        while task.wait() do
+            if WinShell and WinShell.Parent and WinShell.Visible then
+                WinShell.Position = UDim2.fromScale(0.5, 0.5)
+            end
+        end
+    end)
+
+    local FloatBtn = Instance.new("TextButton")
+    FloatBtn.Name = "SAGEBAIT_FloatBtn"
+    FloatBtn.Size = UDim2.fromOffset(56, 56)
+    FloatBtn.Position = UDim2.new(0, 20, 0.5, -28)
+    
+    FloatBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    FloatBtn.Text = "S"
+    FloatBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
+    FloatBtn.Font = Enum.Font.GothamBold
+    FloatBtn.TextSize = 24
+    FloatBtn.AutoButtonColor = false
+    FloatBtn.BorderSizePixel = 0
+    FloatBtn.Visible = false
+    FloatBtn.ZIndex = 999
+    FloatBtn.Parent = WinRoot
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = FloatBtn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(80, 0, 0)
+    stroke.Thickness = 1
+    stroke.Parent = FloatBtn
+
+    WinShell:GetPropertyChangedSignal("Visible"):Connect(function()
+        FloatBtn.Visible = not WinShell.Visible
+    end)
+
+    local dragging, dragStart, startPos = false, nil, nil
+    FloatBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = FloatBtn.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    FloatBtn.InputChanged
+  :Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            FloatBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    
+    FloatBtn.MouseButton1Click:Connect(function()
+        WinShell.Visible = true
+        WinShell.Position = UDim2.fromScale(0.5, 0.5)
+        WinShell.Size = UDim2.fromOffset(724, 516)
+        if Library.Window.SetMinimized then
+            Library.Window:SetMinimized(false)
+        end
+    end)
+end
